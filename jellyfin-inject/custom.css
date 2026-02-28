@@ -1,0 +1,19 @@
+/*
+ * Zer0-Rank – optional custom.css
+ * 
+ * Copy to your Jellyfin web directory alongside custom.js:
+ *   Linux:   /usr/share/jellyfin/web/custom.css
+ *   Windows: C:\Program Files\Jellyfin\Server\jellyfin-web\custom.css
+ * 
+ * This file is OPTIONAL. All Zer0-Rank styles are already injected
+ * by custom.js. This file only exists as a fallback or for tweaks.
+ * 
+ * If you paste custom.js into Dashboard → General → Custom JavaScript,
+ * you don't need this file at all.
+ */
+
+/* Subtle sidebar separator above the Zer0-Rank button */
+#zer0rank-sidebar-btn {
+    border-top: 1px solid rgba(255,255,255,.06);
+    margin-top: 4px;
+}

@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ Zer0-Rank – Watch Ranks</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:          #0f0f17;
+            --surface:     #1a1a2e;
+            --surface2:    #16213e;
+            --accent:      #e94560;
+            --accent2:     #0f3460;
+            --text:        #e0e0e0;
+            --text-muted:  #888;
+            --gold:        #ffd700;
+            --green:       #00e676;
+            --orange:      #ff9800;
+            --purple:      #aa00ff;
+            --radius:      12px;
+            --c-bronze:    #cd7f32; --c-silver: #c0c0c0; --c-gold:       #ffd700;
+            --c-platinum:  #00d4ff; --c-ruby:   #e53935; --c-emerald:    #00c853;
+            --c-obsidian:  #aa00ff; --c-mythril:#40c4ff; --c-adamant:    #00bcd4;
+            --c-grandmaster:#ffd740;--c-king:   #ffab40; --c-legend:     #ff6d00;
+            --c-champion:  #d500f9; --c-god:    #ffff00; --c-demonking:  #f44336;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+
+        /* ── HEADER ─────────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, var(--surface2), var(--accent2));
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 2px solid var(--accent);
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 20px rgba(233,69,96,.3);
+            flex-wrap: wrap;
+        }
+        header h1 {
+            font-size: 1.5rem; font-weight: 800;
+            background: linear-gradient(90deg, var(--accent), var(--gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        header .subtitle { color: var(--text-muted); font-size: .8rem; }
+
+        nav { margin-left: auto; display: flex; gap: .4rem; flex-wrap: wrap; }
+        nav button {
+            background: transparent; border: 1px solid var(--accent);
+            color: var(--text); padding: .4rem 1rem;
+            border-radius: 999px; cursor: pointer; font-size: .82rem;
+            transition: background .2s, color .2s;
+        }
+        nav button:hover, nav button.active { background: var(--accent); color: #fff; }
+
+        main { padding: 2rem; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+        /* ── CARD ───────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            border: 1px solid #ffffff0f;
+        }
+
+        /* ── MY RANK ────────────────────────────────────── */
+        #panel-me { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media(max-width: 680px) { #panel-me { grid-template-columns: 1fr; } }
+
+        .rank-hero {
+            background: var(--surface); border-radius: var(--radius); padding: 2rem;
+            text-align: center; border: 1px solid #ffffff0f;
+            position: relative; overflow: hidden;
+        }
+        .rank-hero::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at 50% 0%, var(--rank-color,#fff)22 0%, transparent 70%);
+        }
+        .rank-icon-big { font-size: 5rem; line-height: 1; margin-bottom: .5rem; }
+        .rank-name-big { font-size: 2rem; font-weight: 900; color: var(--rank-color, var(--gold)); text-shadow: 0 0 20px var(--rank-color, var(--gold)); }
+        .prestige-badge { display: inline-block; background: linear-gradient(135deg,#6a0dad,#b8860b); color: #fff; padding: .2rem .7rem; border-radius: 999px; font-size: .75rem; font-weight: 700; margin-top: .4rem; }
+
+        .stats-grid { display: grid; gap: 1rem; }
+        .stat-card { background: var(--surface2); border-radius: var(--radius); padding: 1.2rem 1.5rem; border: 1px solid #ffffff0f; }
+        .stat-label { color: var(--text-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--gold); margin-top: .2rem; }
+        .stat-sub   { font-size: .78rem; color: var(--text-muted); }
+
+        /* Binge stat card special color */
+        .stat-card.binge .stat-value { color: var(--orange); }
+
+        .progress-wrap { margin-top: 1.2rem; }
+        .progress-label { display: flex; justify-content: space-between; font-size: .78rem; color: var(--text-muted); margin-bottom: .4rem; }
+        .progress-bar { height: 10px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 999px; transition: width .5s ease; }
+
+        /* ── BUTTONS ────────────────────────────────────── */
+        .btn {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .5rem 1.2rem; border: none; border-radius: 8px;
+            cursor: pointer; font-size: .88rem; font-weight: 600;
+            transition: filter .2s, transform .1s;
+        }
+        .btn:hover  { filter: brightness(1.15); }
+        .btn:active { transform: scale(.97); }
+        .btn-primary   { background: var(--accent);  color: #fff; }
+        .btn-secondary { background: var(--accent2); color: #fff; }
+        .btn-warning   { background: #f57c00;        color: #fff; }
+        .btn-danger    { background: #c62828;        color: #fff; }
+        .btn-green     { background: #2e7d32;        color: #fff; }
+        .btn-row { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: .5rem; }
+
+        /* ── LEADERBOARD ────────────────────────────────── */
+        #panel-leaderboard { display: flex; flex-direction: column; gap: 1rem; }
+        .lb-header { display: grid; grid-template-columns: 3rem 1fr auto auto; padding: .4rem 1rem; font-size: .73rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; }
+        .lb-row { background: var(--surface); border-radius: var(--radius); display: grid; grid-template-columns: 3rem 1fr auto auto; align-items: center; padding: .9rem 1.2rem; border: 1px solid #ffffff0f; gap: .5rem; transition: background .2s; }
+        .lb-row:hover  { background: var(--surface2); }
+        .lb-row.me     { border-color: var(--accent); background: #e9456015; }
+        .lb-pos        { font-size: 1.1rem; font-weight: 800; color: var(--text-muted); text-align: center; }
+        .lb-pos.top1   { color: var(--gold); }
+        .lb-pos.top2   { color: var(--c-silver); }
+        .lb-pos.top3   { color: var(--c-bronze); }
+        .lb-user       { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+        .lb-avatar     { width: 36px; height: 36px; border-radius: 50%; background: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+        .lb-username   { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lb-prestige-badge { font-size: .7rem; background: linear-gradient(135deg,#6a0dad,#b8860b); padding: .1rem .5rem; border-radius: 999px; color: #fff; white-space: nowrap; }
+        .lb-rank       { text-align: right; white-space: nowrap; }
+        .lb-rank-name  { font-weight: 700; font-size: .95rem; }
+        .lb-rank-icon  { font-size: 1.2rem; }
+        .lb-xp         { text-align: right; white-space: nowrap; color: var(--gold); font-weight: 600; font-size: .9rem; }
+
+        /* ── ALL RANKS ──────────────────────────────────── */
+        .ranks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px,1fr)); gap: 1rem; }
+        .rank-card { background: var(--surface); border-radius: var(--radius); padding: 1.4rem; text-align: center; border: 1px solid #ffffff0f; transition: transform .2s, border-color .2s; }
+        .rank-card:hover    { transform: translateY(-3px); }
+        .rank-card.achieved { border-color: var(--rank-color, var(--gold)); box-shadow: 0 0 15px var(--rank-color, var(--gold))33; }
+        .rank-card.locked   { opacity: .45; }
+        .rank-card-icon  { font-size: 2.8rem; }
+        .rank-card-name  { font-weight: 700; font-size: 1rem; margin-top: .5rem; color: var(--rank-color, var(--text)); }
+        .rank-card-xp    { font-size: .75rem; color: var(--text-muted); margin-top: .2rem; }
+        .rank-card-badge { margin-top: .5rem; font-size: .7rem; padding: .15rem .5rem; border-radius: 999px; display: inline-block; }
+        .rank-card-badge.achieved { background: #00c85333; color: var(--green); }
+        .rank-card-badge.locked   { background: #ffffff11; color: var(--text-muted); }
+        .rank-card-badge.current  { background: var(--accent); color: #fff; }
+
+        /* ── XP SETTINGS PANEL ──────────────────────────── */
+        #panel-xp-settings { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .xp-section-title {
+            font-size: 1rem; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: .1em;
+            padding-bottom: .5rem; border-bottom: 1px solid #ffffff11;
+            margin-bottom: .5rem;
+        }
+
+        .xp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 1rem; }
+
+        /* Slider row */
+        .slider-row { background: var(--surface2); border-radius: var(--radius); padding: 1.1rem 1.3rem; border: 1px solid #ffffff0f; }
+        .slider-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .6rem; }
+        .slider-label { font-size: .88rem; font-weight: 600; }
+        .slider-value { font-size: 1.1rem; font-weight: 800; color: var(--gold); min-width: 3.5rem; text-align: right; }
+        .slider-value.binge-color { color: var(--orange); }
+        input[type=range] {
+            width: 100%; height: 6px; -webkit-appearance: none;
+            background: linear-gradient(90deg, var(--accent) var(--pct,50%), #ffffff22 var(--pct,50%));
+            border-radius: 999px; cursor: pointer; outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px;
+            border-radius: 50%; background: var(--gold);
+            box-shadow: 0 0 6px var(--gold)88; cursor: pointer;
+        }
+        input[type=range].binge-range {
+            background: linear-gradient(90deg, var(--orange) var(--pct,50%), #ffffff22 var(--pct,50%));
+        }
+        input[type=range].binge-range::-webkit-slider-thumb { background: var(--orange); box-shadow: 0 0 6px var(--orange)88; }
+        .slider-desc { font-size: .73rem; color: var(--text-muted); margin-top: .35rem; }
+
+        /* Toggle switch */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border-radius: var(--radius); padding: 1rem 1.3rem; border: 1px solid #ffffff0f; }
+        .toggle-info .toggle-name { font-weight: 600; font-size: .9rem; }
+        .toggle-info .toggle-desc { font-size: .75rem; color: var(--text-muted); margin-top: .15rem; }
+        .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: #333; border-radius: 999px; cursor: pointer; transition: background .2s; }
+        .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; left: 3px; top: 3px; transition: transform .2s; }
+        .toggle-switch input:checked + .toggle-slider { background: var(--orange); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+        /* Binge preview card */
+        .binge-preview {
+            background: linear-gradient(135deg, #1a1a00, #2a1a00);
+            border: 1px solid var(--orange)44;
+            border-radius: var(--radius);
+            padding: 1.2rem 1.5rem;
+            display: flex; align-items: center; gap: 1.2rem;
+        }
+        .binge-fire { font-size: 2.5rem; flex-shrink: 0; animation: flicker .5s ease infinite alternate; }
+        @keyframes flicker { to { transform: scale(1.1) rotate(3deg); } }
+        .binge-preview-text h3 { font-size: 1rem; color: var(--orange); margin-bottom: .2rem; }
+        .binge-preview-text p  { font-size: .82rem; color: var(--text-muted); }
+        .binge-preview-text strong { color: var(--orange); }
+
+        /* Save banner */
+        .save-banner {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--surface2); border-radius: var(--radius);
+            padding: 1rem 1.5rem; border: 1px solid #ffffff0f;
+            flex-wrap: wrap; gap: .8rem;
+        }
+        .save-banner .save-info { font-size: .85rem; color: var(--text-muted); }
+        .save-msg { font-size: .85rem; color: var(--green); min-height: 1.2em; }
+
+        /* ── SETTINGS PANEL ─────────────────────────────── */
+        #panel-settings { display: flex; flex-direction: column; gap: 1.5rem; }
+        .config-form { display: grid; gap: .8rem; max-width: 520px; }
+        .config-row { display: flex; flex-direction: column; gap: .3rem; }
+        .config-row label { font-size: .8rem; color: var(--text-muted); }
+        .config-row input { background: var(--surface2); border: 1px solid #ffffff1a; border-radius: 8px; color: var(--text); padding: .5rem .8rem; font-size: .9rem; outline: none; transition: border .2s; }
+        .config-row input:focus { border-color: var(--accent); }
+
+        /* ── MISC ───────────────────────────────────────── */
+        .hidden  { display: none !important; }
+        .loading { display: flex; align-items: center; justify-content: center; gap: .8rem; color: var(--text-muted); padding: 3rem; }
+        .spinner { width: 28px; height: 28px; border: 3px solid #ffffff22; border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 1.2rem; display: flex; align-items: center; gap: .5rem; }
+
+        /* ── RANK-UP POPUP ──────────────────────────────── */
+        #rankup-overlay { position: fixed; inset: 0; background: #00000088; display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); }
+        .rankup-box { background: var(--surface); border-radius: 20px; padding: 3rem 4rem; text-align: center; border: 2px solid var(--gold); box-shadow: 0 0 60px var(--gold)44; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); position: relative; overflow: hidden; }
+        @keyframes popIn { from { opacity:0; transform:scale(.4) rotate(-5deg); } to { opacity:1; transform:scale(1); } }
+        .rankup-title { font-size: 1rem; color: var(--text-muted); letter-spacing: .15em; text-transform: uppercase; }
+        .rankup-icon  { font-size: 6rem; margin: .5rem 0; animation: bounce 1s ease infinite alternate; }
+        @keyframes bounce { to { transform: scale(1.1); } }
+        .rankup-name  { font-size: 2.5rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 30px var(--gold); }
+        .rankup-close { margin-top: 1.5rem; }
+        .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; animation: float 1.5s ease-out forwards; pointer-events: none; }
+        @keyframes float { to { transform: translateY(-120px) translateX(var(--dx,0px)) scale(0); opacity:0; } }
+
+        /* ── STATUS BAR ─────────────────────────────────── */
+        .status-bar { position: fixed; bottom: 1.2rem; right: 1.5rem; background: var(--surface); border: 1px solid #ffffff1a; border-radius: var(--radius); padding: .7rem 1.2rem; font-size: .8rem; color: var(--text-muted); display: flex; align-items: center; gap: .5rem; z-index: 50; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .status-dot.ok      { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .status-dot.error   { background: var(--accent); }
+        .status-dot.loading { background: var(--gold); animation: pulse .9s ease infinite alternate; }
+        @keyframes pulse { to { opacity: .3; } }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- HEADER -->
+    <header>
+        <div>
+            <h1>⚔️ Zer0-Rank</h1>
+            <div class="subtitle">Watch History · RPG Experience</div>
+        </div>
+        <nav>
+            <button class="active"  onclick="showPanel('me')">My Rank</button>
+            <button onclick="showPanel('leaderboard')">🏆 Leaderboard</button>
+            <button onclick="showPanel('ranks')">📋 All Ranks</button>
+            <button onclick="showPanel('xp-settings')" style="border-color:var(--orange);color:var(--orange)">🔥 XP Settings</button>
+            <button onclick="showPanel('settings')">⚙️ Config</button>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- MY RANK -->
+        <section id="panel-me">
+            <div class="loading" id="me-loading"><div class="spinner"></div> Loading your rank…</div>
+
+            <div class="rank-hero hidden" id="rank-hero">
+                <div class="rank-icon-big" id="hero-icon">🥉</div>
+                <div class="rank-name-big" id="hero-name">Bronze</div>
+                <div id="hero-prestige"></div>
+                <div class="progress-wrap">
+                    <div class="progress-label">
+                        <span id="prog-from">Bronze</span>
+                        <span id="prog-to">Silver</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="prog-bar" style="width:0%"></div>
+                    </div>
+                    <div style="font-size:.75rem;color:var(--text-muted);text-align:right;margin-top:.4rem" id="prog-xp-info"></div>
+                </div>
+            </div>
+
+            <div class="stats-grid hidden" id="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total XP</div>
+                    <div class="stat-value" id="stat-xp">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Leaderboard Position</div>
+                    <div class="stat-value" id="stat-pos">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">XP to next rank</div>
+                    <div class="stat-value" id="stat-xpnext">—</div>
+                    <div class="stat-sub" id="stat-xpnext-sub"></div>
+                </div>
+                <div class="stat-card binge">
+                    <div class="stat-label">🔥 Binge Days</div>
+                    <div class="stat-value" id="stat-binge">—</div>
+                    <div class="stat-sub" id="stat-binge-sub">Binge-Bonus XP earned</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Prestige</div>
+                    <div class="stat-value" id="stat-prestige">0</div>
+                    <div class="stat-sub">Prestige count</div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="refresh()">↻ Refresh</button>
+                    <button class="btn btn-warning" id="prestige-btn" onclick="doPrestige()" style="display:none">😈 Prestige!</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEADERBOARD -->
+        <section id="panel-leaderboard" class="hidden">
+            <div class="section-title">🏆 Server Leaderboard</div>
+            <div class="lb-header">
+                <span>#</span><span>Player</span><span>Rank</span><span style="text-align:right">XP</span>
+            </div>
+            <div id="lb-list">
+                <div class="loading"><div class="spinner"></div> Loading…</div>
+            </div>
+        </section>
+
+        <!-- ALL RANKS -->
+        <section id="panel-ranks" class="hidden">
+            <div class="section-title">📋 All Ranks</div>
+            <div id="ranks-grid" class="ranks-grid"></div>
+        </section>
+
+        <!-- XP SETTINGS -->
+        <section id="panel-xp-settings" class="hidden">
+            <div class="section-title">🔥 XP-Einstellungen</div>
+
+            <!-- Binge preview -->
+            <div class="binge-preview" id="binge-preview">
+                <div class="binge-fire">🔥</div>
+                <div class="binge-preview-text">
+                    <h3>Binge-Bonus aktiv</h3>
+                    <p>Du bekommst <strong id="prev-bonus">500 XP</strong> wenn du an einem Tag
+                       <strong id="prev-hours">3h</strong> am Stück schaust.<br>
+                       Pausen bis <strong id="prev-gap">10 Min</strong> zählen noch als durchgehend.</p>
+                </div>
+            </div>
+
+            <div id="panel-xp-settings">
+
+                <!-- BASE XP -->
+                <div class="card">
+                    <div class="xp-section-title">⚡ Basis XP</div>
+                    <div class="xp-grid">
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">XP pro Minute</span>
+                                <span class="slider-value" id="val-perMinute">2</span>
+                            </div>
+                            <input type="range" id="sl-perMinute" min="1" max="20" value="2" step="1"
+                                   oninput="updateSlider('perMinute', this)">
+                            <div class="slider-desc">Wird auf jede echte Schausekunde angewendet.</div>
+                        </div>
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">XP pro Episode</span>
+                                <span class="slider-value" id="val-perEpisode">20</span>
+                            </div>
+                            <input type="range" id="sl-perEpisode" min="0" max="200" value="20" step="5"
+                                   oninput="updateSlider('perEpisode', this)">
+                            <div class="slider-desc">Bonus bei abgeschlossener Episode (≥ Schwellenwert).</div>
+                        </div>
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">XP pro Film</span>
+                                <span class="slider-value" id="val-perMovie">20</span>
+                            </div>
+                            <input type="range" id="sl-perMovie" min="0" max="500" value="20" step="5"
+                                   oninput="updateSlider('perMovie', this)">
+                            <div class="slider-desc">Bonus bei abgeschlossenem Film.</div>
+                        </div>
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">Abschluss-Schwelle</span>
+                                <span class="slider-value" id="val-completionThreshold">80%</span>
+                            </div>
+                            <input type="range" id="sl-completionThreshold" min="50" max="100" value="80" step="5"
+                                   oninput="updateSlider('completionThreshold', this)">
+                            <div class="slider-desc">Min. % des Inhalts der geschaut werden muss.</div>
+                        </div>
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">Episoden-Mindestzeit</span>
+                                <span class="slider-value" id="val-episodeMinWatch">15 Min</span>
+                            </div>
+                            <input type="range" id="sl-episodeMinWatch" min="60" max="3600" value="900" step="60"
+                                   oninput="updateSlider('episodeMinWatch', this)">
+                            <div class="slider-desc">Min. Sekunden für Episode-Bonus (Anti-Cheat).</div>
+                        </div>
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">Film-Mindestzeit</span>
+                                <span class="slider-value" id="val-movieMinWatch">45 Min</span>
+                            </div>
+                            <input type="range" id="sl-movieMinWatch" min="300" max="7200" value="2700" step="300"
+                                   oninput="updateSlider('movieMinWatch', this)">
+                            <div class="slider-desc">Min. Sekunden für Film-Bonus (Anti-Cheat).</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- BINGE BONUS -->
+                <div class="card">
+                    <div class="xp-section-title">🔥 Binge-Bonus</div>
+
+                    <div style="margin-bottom:1rem">
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <div class="toggle-name">Binge-Bonus aktivieren</div>
+                                <div class="toggle-desc">Bonus-XP für durchgehendes Schauen über mehrere Stunden.</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="tog-binge" checked onchange="updateBingePreview()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="xp-grid">
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">Bonus-XP pro Binge-Tag</span>
+                                <span class="slider-value binge-color" id="val-bingeBonus">500</span>
+                            </div>
+                            <input type="range" class="binge-range" id="sl-bingeBonus"
+                                   min="50" max="5000" value="500" step="50"
+                                   oninput="updateSlider('bingeBonus', this); updateBingePreview()">
+                            <div class="slider-desc">XP die du bekommst wenn du einen Binge-Tag erreichst.</div>
+                        </div>
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">Binge-Schwelle (Stunden)</span>
+                                <span class="slider-value binge-color" id="val-bingeHours">3,0h</span>
+                            </div>
+                            <input type="range" class="binge-range" id="sl-bingeHours"
+                                   min="1" max="12" value="3" step="0.5"
+                                   oninput="updateSlider('bingeHours', this); updateBingePreview()">
+                            <div class="slider-desc">Wie viele Stunden am Stück du schauen musst.</div>
+                        </div>
+
+                        <div class="slider-row">
+                            <div class="slider-head">
+                                <span class="slider-label">Pause-Toleranz</span>
+                                <span class="slider-value binge-color" id="val-bingeGap">10 Min</span>
+                            </div>
+                            <input type="range" class="binge-range" id="sl-bingeGap"
+                                   min="0" max="3600" value="600" step="60"
+                                   oninput="updateSlider('bingeGap', this); updateBingePreview()">
+                            <div class="slider-desc">Max. Pause die noch als "durchgehend" gilt.</div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Save row -->
+            <div class="save-banner">
+                <div>
+                    <div style="font-weight:700;margin-bottom:.2rem">Einstellungen speichern</div>
+                    <div class="save-info">Änderungen gelten ab dem nächsten XP-Sync (ca. 10 Min).</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
+                    <span class="save-msg" id="xp-save-msg"></span>
+                    <button class="btn btn-secondary" onclick="loadXpConfig()">↺ Reset</button>
+                    <button class="btn btn-green" onclick="saveXpConfig()">💾 Speichern</button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SERVER SETTINGS -->
+        <section id="panel-settings" class="hidden">
+            <div class="section-title">⚙️ Server-Konfiguration</div>
+            <div class="card config-form">
+                <div class="config-row">
+                    <label>Zer0-Rank Server URL</label>
+                    <input id="cfg-api" type="text" placeholder="http://localhost:8765">
+                </div>
+                <div class="config-row">
+                    <label>Deine Jellyfin User ID</label>
+                    <input id="cfg-userid" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="saveSettings()">💾 Speichern</button>
+                    <button class="btn btn-secondary" onclick="refresh()">↻ Neu laden</button>
+                    <button class="btn btn-danger" onclick="adminSeasonReset()">🗓️ Season Reset (Admin)</button>
+                </div>
+                <div id="cfg-msg" style="font-size:.85rem;color:var(--green);margin-top:.3rem"></div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- RANK-UP POPUP -->
+<div id="rankup-overlay" class="hidden">
+    <div class="rankup-box" id="rankup-box">
+        <div class="rankup-title">🎉 RANK UP!</div>
+        <div class="rankup-icon" id="rankup-icon">🥇</div>
+        <div class="rankup-name" id="rankup-name">Gold</div>
+        <div class="rankup-close">
+            <button class="btn btn-primary" onclick="closeRankup()">Awesome! 🎊</button>
+        </div>
+    </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+    <div class="status-dot loading" id="status-dot"></div>
+    <span id="status-text">Verbinde…</span>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────
+let API_BASE  = localStorage.getItem('zer0rank_api')    || 'http://localhost:8765';
+let MY_USERID = localStorage.getItem('zer0rank_userid') || '';
+document.getElementById('cfg-api').value    = API_BASE;
+document.getElementById('cfg-userid').value = MY_USERID;
+
+const RANK_COLORS = {
+    'Bronze':'#cd7f32','Silver':'#c0c0c0','Gold':'#ffd700','Platinum':'#00d4ff',
+    'Ruby':'#e53935','Emerald':'#00c853','Obsidian':'#aa00ff','Mythril':'#40c4ff',
+    'Adamant':'#00bcd4','Grandmaster':'#ffd740','King':'#ffab40','Legend':'#ff6d00',
+    'Champion':'#d500f9','God':'#ffff00','Demon King':'#f44336'
+};
+
+// ── Panel nav ─────────────────────────────────────────────
+const PANELS = ['me','leaderboard','ranks','xp-settings','settings'];
+function showPanel(name) {
+    PANELS.forEach(id => document.getElementById('panel-'+id).classList.add('hidden'));
+    document.getElementById('panel-'+name).classList.remove('hidden');
+    document.querySelectorAll('nav button').forEach((btn, i) => {
+        btn.classList.toggle('active', PANELS[i] === name);
+    });
+    if (name === 'leaderboard')  loadLeaderboard();
+    if (name === 'ranks')        loadRanks();
+    if (name === 'xp-settings')  loadXpConfig();
+}
+
+// ── Status ────────────────────────────────────────────────
+function setStatus(state, text) {
+    document.getElementById('status-dot').className  = 'status-dot '+state;
+    document.getElementById('status-text').textContent = text;
+}
+
+// ── API ───────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+    setStatus('loading','Laden…');
+    try {
+        const res = await fetch(API_BASE+path, {
+            headers: { 'X-User-Id': MY_USERID, ...opts.headers },
+            ...opts
+        });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        setStatus('ok','Verbunden');
+        return await res.json();
+    } catch(e) {
+        setStatus('error','Fehler: '+e.message);
+        throw e;
+    }
+}
+
+function fmt(n) { return Number(n).toLocaleString('de-DE'); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── My Rank ───────────────────────────────────────────────
+let lastRank = localStorage.getItem('zer0rank_lastRank') || '';
+
+async function loadMyRank() {
+    if (!MY_USERID) {
+        document.getElementById('me-loading').innerHTML = '⚠️ Bitte User ID in <strong>Config</strong> eintragen.';
+        return;
+    }
+    try {
+        const [d, binge] = await Promise.all([
+            apiFetch('/WatchRanks/Me'),
+            apiFetch('/WatchRanks/BingeStats/'+MY_USERID).catch(() => null)
+        ]);
+
+        document.getElementById('me-loading').classList.add('hidden');
+        document.getElementById('rank-hero').classList.remove('hidden');
+        document.getElementById('stats-grid').classList.remove('hidden');
+
+        const color = RANK_COLORS[d.rankName]||'#ffd700';
+        document.getElementById('rank-hero').style.setProperty('--rank-color', color);
+        document.getElementById('hero-icon').textContent = d.rankIcon;
+        document.getElementById('hero-name').textContent = d.rankName;
+        document.getElementById('hero-name').style.color = color;
+
+        if (d.prestigeCount > 0)
+            document.getElementById('hero-prestige').innerHTML =
+                `<span class="prestige-badge">✨ Prestige ${d.prestigeCount}</span>`;
+
+        document.getElementById('prog-bar').style.width   = d.progressPercent+'%';
+        document.getElementById('prog-from').textContent  = d.rankName;
+        document.getElementById('prog-xp-info').textContent =
+            d.xpToNext > 0 ? fmt(d.xpToNext)+' XP fehlen noch' : '🎊 MAX RANK';
+
+        document.getElementById('stat-xp').textContent       = fmt(d.totalXp)+' XP';
+        document.getElementById('stat-pos').textContent      = '#'+d.leaderboardPosition;
+        document.getElementById('stat-prestige').textContent = d.prestigeCount;
+
+        if (d.xpToNext > 0) {
+            document.getElementById('stat-xpnext').textContent = fmt(d.xpToNext)+' XP';
+            document.getElementById('stat-xpnext-sub').textContent = d.progressPercent.toFixed(1)+'% Fortschritt';
+        } else {
+            document.getElementById('stat-xpnext').textContent = '—';
+            document.getElementById('stat-xpnext-sub').textContent = 'Demon King erreicht!';
+        }
+
+        // Binge stats
+        if (binge) {
+            document.getElementById('stat-binge').textContent = binge.bingeDaysTotal+' Tage 🔥';
+            document.getElementById('stat-binge-sub').textContent =
+                fmt(binge.totalBingeXp)+' Binge-XP insgesamt';
+        }
+
+        document.getElementById('prestige-btn').style.display =
+            d.rankName === 'Demon King' ? 'inline-flex' : 'none';
+
+        if (lastRank && lastRank !== d.rankName) showRankupPopup(d.rankName, d.rankIcon);
+        lastRank = d.rankName;
+        localStorage.setItem('zer0rank_lastRank', lastRank);
+    } catch(e) {
+        document.getElementById('me-loading').innerHTML = '❌ Rank konnte nicht geladen werden. Config prüfen.';
+    }
+}
+
+// ── Leaderboard ───────────────────────────────────────────
+async function loadLeaderboard() {
+    const list = document.getElementById('lb-list');
+    list.innerHTML = '<div class="loading"><div class="spinner"></div> Laden…</div>';
+    try {
+        const data = await apiFetch('/WatchRanks/Leaderboard');
+        list.innerHTML = '';
+        data.forEach((u, i) => {
+            const posClass = ['top1','top2','top3'][i]||'';
+            const color    = RANK_COLORS[u.rankName]||'#ffd700';
+            const prestige = u.prestigeCount > 0 ? `<span class="lb-prestige-badge">✨ P${u.prestigeCount}</span>` : '';
+            list.innerHTML += `
+            <div class="lb-row ${u.userId===MY_USERID?'me':''}">
+                <div class="lb-pos ${posClass}">${medal(i+1)}</div>
+                <div class="lb-user">
+                    <div class="lb-avatar">${u.username.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="lb-username">${esc(u.username)} ${u.userId===MY_USERID?'(du)':''}</div>
+                        ${prestige}
+                    </div>
+                </div>
+                <div class="lb-rank" style="color:${color}">
+                    <span class="lb-rank-icon">${u.rankIcon}</span>
+                    <span class="lb-rank-name">${esc(u.rankName)}</span>
+                </div>
+                <div class="lb-xp">${fmt(u.totalXp)}</div>
+            </div>`;
+        });
+        if (!data.length) list.innerHTML = '<p style="color:var(--text-muted);padding:2rem">Noch keine Daten.</p>';
+    } catch(e) {
+        list.innerHTML = '<p style="color:var(--accent);padding:1rem">Leaderboard konnte nicht geladen werden.</p>';
+    }
+}
+function medal(p) { return p===1?'🥇':p===2?'🥈':p===3?'🥉':p; }
+
+// ── All Ranks ─────────────────────────────────────────────
+async function loadRanks() {
+    const grid = document.getElementById('ranks-grid');
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div> Laden…</div>';
+    try {
+        const [ranksData, meData] = await Promise.all([
+            apiFetch('/WatchRanks/Ranks'),
+            MY_USERID ? apiFetch('/WatchRanks/Me').catch(()=>null) : null
+        ]);
+        grid.innerHTML = '';
+        const myXp = meData ? meData.totalXp : -1;
+        ranksData.forEach(r => {
+            const color    = RANK_COLORS[r.name]||'#ffd700';
+            const achieved = myXp >= r.xpRequired;
+            const current  = meData && meData.rankName === r.name;
+            const badgeText = current?'◀ Aktuell':achieved?'✓ Erreicht':'🔒 Gesperrt';
+            const badgeCls  = current?'current':achieved?'achieved':'locked';
+            grid.innerHTML += `
+            <div class="rank-card ${current?'achieved':achieved?'achieved':'locked'}" style="--rank-color:${color}">
+                <div class="rank-card-icon">${r.icon}</div>
+                <div class="rank-card-name">${esc(r.name)}</div>
+                <div class="rank-card-xp">${fmt(r.xpRequired)} XP</div>
+                <span class="rank-card-badge ${badgeCls}">${badgeText}</span>
+            </div>`;
+        });
+    } catch(e) {
+        grid.innerHTML = '<p style="color:var(--accent)">Laden fehlgeschlagen.</p>';
+    }
+}
+
+// ── XP Config ─────────────────────────────────────────────
+async function loadXpConfig() {
+    try {
+        const cfg = await apiFetch('/WatchRanks/Config');
+
+        setSlider('perMinute',   cfg.xpPerMinute,      v => v);
+        setSlider('perEpisode',  cfg.xpPerEpisode,      v => v);
+        setSlider('perMovie',    cfg.xpPerMovie,        v => v);
+        setSlider('completionThreshold', Math.round(cfg.completionThreshold*100), v => v+'%');
+        setSlider('episodeMinWatch', cfg.episodeMinWatchSeconds, v => fmtSeconds(v));
+        setSlider('movieMinWatch',   cfg.movieMinWatchSeconds,   v => fmtSeconds(v));
+        setSlider('bingeBonus',  cfg.bingeXpBonus,              v => v);
+        setSlider('bingeHours',  cfg.bingeThresholdHours,        v => v.toFixed(1)+'h');
+        setSlider('bingeGap',    cfg.bingeGapToleranceSeconds,   v => fmtSeconds(v));
+
+        document.getElementById('tog-binge').checked = cfg.bingeEnabled;
+        updateBingePreview();
+    } catch(e) {
+        document.getElementById('xp-save-msg').textContent = '⚠️ Config konnte nicht geladen werden.';
+    }
+}
+
+function setSlider(id, value, fmtFn) {
+    const sl  = document.getElementById('sl-'+id);
+    const val = document.getElementById('val-'+id);
+    if (!sl) return;
+    sl.value = value;
+    val.textContent = fmtFn(Number(value));
+    updateSliderGradient(sl);
+}
+
+function updateSlider(id, input) {
+    const val = document.getElementById('val-'+id);
+    let display = input.value;
+    if (id === 'completionThreshold') display = input.value+'%';
+    else if (id === 'episodeMinWatch' || id === 'movieMinWatch' || id === 'bingeGap')
+        display = fmtSeconds(Number(input.value));
+    else if (id === 'bingeHours') display = Number(input.value).toFixed(1)+'h';
+    val.textContent = display;
+    updateSliderGradient(input);
+}
+
+function updateSliderGradient(sl) {
+    const min = Number(sl.min), max = Number(sl.max), val = Number(sl.value);
+    const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+    sl.style.setProperty('--pct', pct);
+}
+
+function updateBingePreview() {
+    const enabled = document.getElementById('tog-binge').checked;
+    const bonus   = document.getElementById('sl-bingeBonus').value;
+    const hours   = document.getElementById('sl-bingeHours').value;
+    const gap     = document.getElementById('sl-bingeGap').value;
+    document.getElementById('prev-bonus').textContent = fmt(bonus)+' XP';
+    document.getElementById('prev-hours').textContent = Number(hours).toFixed(1)+'h';
+    document.getElementById('prev-gap').textContent   = fmtSeconds(Number(gap));
+    document.getElementById('binge-preview').style.opacity = enabled ? '1' : '0.4';
+}
+
+function fmtSeconds(s) {
+    if (s >= 3600) return (s/3600).toFixed(1).replace('.0','')+'h';
+    if (s >= 60)   return Math.round(s/60)+' Min';
+    return s+' Sek';
+}
+
+async function saveXpConfig() {
+    const msg = document.getElementById('xp-save-msg');
+    msg.style.color = 'var(--text-muted)';
+    msg.textContent = 'Speichern…';
+
+    const body = {
+        xpPerMinute:             Number(document.getElementById('sl-perMinute').value),
+        xpPerEpisode:            Number(document.getElementById('sl-perEpisode').value),
+        xpPerMovie:              Number(document.getElementById('sl-perMovie').value),
+        completionThreshold:     Number(document.getElementById('sl-completionThreshold').value) / 100,
+        episodeMinWatchSeconds:  Number(document.getElementById('sl-episodeMinWatch').value),
+        movieMinWatchSeconds:    Number(document.getElementById('sl-movieMinWatch').value),
+        bingeEnabled:            document.getElementById('tog-binge').checked,
+        bingeThresholdHours:     Number(document.getElementById('sl-bingeHours').value),
+        bingeXpBonus:            Number(document.getElementById('sl-bingeBonus').value),
+        bingeGapToleranceSeconds:Number(document.getElementById('sl-bingeGap').value),
+    };
+
+    try {
+        await fetch(API_BASE+'/WatchRanks/Config', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'X-Admin':'true' },
+            body: JSON.stringify(body)
+        });
+        msg.style.color = 'var(--green)';
+        msg.textContent = '✅ Gespeichert!';
+        setTimeout(() => msg.textContent = '', 3000);
+    } catch(e) {
+        msg.style.color = 'var(--accent)';
+        msg.textContent = '❌ Fehler beim Speichern.';
+    }
+}
+
+// ── Prestige ──────────────────────────────────────────────
+async function doPrestige() {
+    if (!confirm('Wirklich? Prestige setzt deine XP auf Bronze zurück!')) return;
+    try {
+        const d = await apiFetch('/WatchRanks/Prestige', { method:'POST' });
+        alert(d.message); refresh();
+    } catch(e) { alert('Prestige fehlgeschlagen.'); }
+}
+
+// ── Season Reset ──────────────────────────────────────────
+async function adminSeasonReset() {
+    if (!confirm('⚠️ Alle User unter Platinum werden zurückgesetzt. Fortfahren?')) return;
+    try {
+        const d = await fetch(API_BASE+'/WatchRanks/Season/Reset',
+            { method:'POST', headers:{ 'X-Admin':'true' } }).then(r=>r.json());
+        document.getElementById('cfg-msg').textContent = d.message||d.error;
+    } catch(e) { document.getElementById('cfg-msg').textContent = 'Fehlgeschlagen.'; }
+}
+
+// ── Settings ──────────────────────────────────────────────
+function saveSettings() {
+    API_BASE  = document.getElementById('cfg-api').value.trim().replace(/\/+$/,'');
+    MY_USERID = document.getElementById('cfg-userid').value.trim();
+    localStorage.setItem('zer0rank_api',    API_BASE);
+    localStorage.setItem('zer0rank_userid', MY_USERID);
+    document.getElementById('cfg-msg').textContent = '✅ Gespeichert! Daten werden neu geladen…';
+    setTimeout(() => { document.getElementById('cfg-msg').textContent=''; refresh(); }, 1200);
+}
+
+// ── Rank-up popup ─────────────────────────────────────────
+function showRankupPopup(rankName, rankIcon) {
+    document.getElementById('rankup-icon').textContent = rankIcon;
+    document.getElementById('rankup-name').textContent = rankName;
+    document.getElementById('rankup-overlay').classList.remove('hidden');
+    spawnParticles();
+}
+function closeRankup() { document.getElementById('rankup-overlay').classList.add('hidden'); }
+function spawnParticles() {
+    const box = document.getElementById('rankup-box');
+    const cols = ['#ffd700','#e94560','#00e676','#40c4ff','#aa00ff'];
+    for (let i=0;i<30;i++) {
+        const p=document.createElement('div'); p.className='particle';
+        const sz=4+Math.random()*8;
+        p.style.cssText=`width:${sz}px;height:${sz}px;background:${cols[i%5]};left:${Math.random()*100}%;bottom:${Math.random()*40}%;--dx:${(Math.random()-.5)*120}px;animation-duration:${.8+Math.random()*.8}s;animation-delay:${Math.random()*.3}s`;
+        box.appendChild(p); p.addEventListener('animationend',()=>p.remove());
+    }
+}
+
+// ── Init ──────────────────────────────────────────────────
+function refresh() { loadMyRank(); }
+loadMyRank();
+setInterval(loadMyRank, 300_000);
+</script>
+</body>
+</html>
