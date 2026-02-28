@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚔️ Zer0-Rank
+# ⚔️ Zer0-Rank (not finished)
 
 ### Turn your Jellyfin watch history into an RPG experience
 
